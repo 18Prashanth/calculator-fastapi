@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Calculator</title>
+    <!-- <link rel="stylesheet" href="./style.css" /> -->
+
+    <style>
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        max-width: 500px;
+        margin: 0 auto;
+        padding: 20px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        color: white;
+      }
+
+      .calculator {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        padding: 30px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+      }
+
+      h1 {
+        text-align: center;
+        margin-bottom: 30px;
+        font-size: 2.5em;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+      }
+
+      .input-group {
+        margin-bottom: 20px;
+      }
+
+      label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: 600;
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+      }
+
+      input[type="number"] {
+        width: 100%;
+        padding: 12px;
+        border: none;
+        border-radius: 10px;
+        font-size: 16px;
+        background: rgba(255, 255, 255, 0.9);
+        color: #333;
+        box-sizing: border-box;
+      }
+
+      .operation-buttons {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+        margin: 20px 0;
+      }
+
+      button {
+        padding: 15px;
+        border: none;
+        border-radius: 10px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+      }
+
+      button:hover {
+        background: rgba(255, 255, 255, 0.3);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      }
+
+      button:active {
+        transform: translateY(0);
+      }
+
+      .result {
+        margin-top: 20px;
+        padding: 20px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        min-height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        font-weight: 600;
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+      }
+
+      .error {
+        color: #ff6b6b;
+        background: rgba(255, 107, 107, 0.1);
+        border-color: rgba(255, 107, 107, 0.3);
+      }
+
+      .success {
+        color: #51cf66;
+        background: rgba(81, 207, 102, 0.1);
+        border-color: rgba(81, 207, 102, 0.3);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="calculator">
+      <h1>🧮 Calculator</h1>
+
+      <div class="input-group">
+        <label for="numberA">First Number:</label>
+        <input
+          type="number"
+          id="numberA"
+          step="any"
+          placeholder="Enter first number"
+        />
+      </div>
+
+      <div class="input-group">
+        <label for="numberB">Second Number:</label>
+        <input
+          type="number"
+          id="numberB"
+          step="any"
+          placeholder="Enter second number"
+        />
+      </div>
+
+      <div class="operation-buttons">
+        <button onclick="calculate('add')">➕ Add</button>
+        <button onclick="calculate('subtract')">➖ Subtract</button>
+        <button onclick="calculate('multiply')">✖️ Multiply</button>
+        <button onclick="calculate('divide')">➗ Divide</button>
+        <button onclick="calculate('power')">🔺 Power</button>
+        <button onclick="calculateSqrt()">√ Square Root</button>
+      </div>
+
+      <div id="result" class="result">
+        Enter numbers and select an operation
+      </div>
+    </div>
+
+    <script>
+      async function calculate(operation) {
+        const a = parseFloat(document.getElementById("numberA").value);
+        const b = parseFloat(document.getElementById("numberB").value);
+        const resultDiv = document.getElementById("result");
+
+        if (isNaN(a) || isNaN(b)) {
+          showError("Please enter valid numbers");
+          return;
+        }
+
+        try {
+          const response = await fetch(`/${operation}`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ a: a, b: b }),
+          });
+
+          const data = await response.json();
+
+          if (response.ok) {
+            showSuccess(
+              `${a} ${getOperationSymbol(operation)} ${b} = ${data.result}`
+            );
+          } else {
+            showError(data.detail || "Calculation error");
+          }
+        } catch (error) {
+          showError("Network error occurred");
+        }
+      }
+
+      async function calculateSqrt() {
+        const number = parseFloat(document.getElementById("numberA").value);
+        const resultDiv = document.getElementById("result");
+
+        if (isNaN(number)) {
+          showError("Please enter a valid number in the first field");
+          return;
+        }
+
+        try {
+          const response = await fetch("/sqrt", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ number: number }),
+          });
+
+          const data = await response.json();
+
+          if (response.ok) {
+            showSuccess(`√${number} = ${data.result}`);
+          } else {
+            showError(data.detail || "Calculation error");
+          }
+        } catch (error) {
+          showError("Network error occurred");
+        }
+      }
+
+      function getOperationSymbol(operation) {
+        const symbols = {
+          add: "+",
+          subtract: "-",
+          multiply: "×",
+          divide: "÷",
+          power: "^",
+        };
+        return symbols[operation] || operation;
+      }
+
+      function showError(message) {
+        const resultDiv = document.getElementById("result");
+        resultDiv.textContent = message;
+        resultDiv.className = "result error";
+      }
+
+      function showSuccess(message) {
+        const resultDiv = document.getElementById("result");
+        resultDiv.textContent = message;
+        resultDiv.className = "result success";
+      }
+
+      // Allow Enter key to trigger addition
+      document.addEventListener("keypress", function (event) {
+        if (event.key === "Enter") {
+          calculate("add");
+        }
+      });
+    </script>
+  </body>
+</html>
